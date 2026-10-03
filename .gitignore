@@ -1,0 +1,14 @@
+## Visual Studio / .NET Framework build artifacts
+.vs/
+bin/
+obj/
+*.user
+*.suo
+*.userprefs
+
+## Agent tooling metadata (no es parte del proyecto)
+.atl/
+
+## OS
+Thumbs.db
+.DS_Store
