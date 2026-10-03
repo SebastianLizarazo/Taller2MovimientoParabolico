@@ -366,26 +366,22 @@
             this.btnNuevaSim.Click += new System.EventHandler(this.btnNuevaSim_Click);
 
             // gbAnimacion
-            this.gbAnimacion.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
-                | System.Windows.Forms.AnchorStyles.Left)
-                | System.Windows.Forms.AnchorStyles.Right)));
+            this.gbAnimacion.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left))));
             this.gbAnimacion.Location = new System.Drawing.Point(336, 8);
             this.gbAnimacion.Name = "gbAnimacion";
-            this.gbAnimacion.Size = new System.Drawing.Size(840, 700);
+            this.gbAnimacion.Size = new System.Drawing.Size(760, 500);
             this.gbAnimacion.TabIndex = 2;
             this.gbAnimacion.Text = "Animación del movimiento";
             this.gbAnimacion.Controls.Add(this.panelAnimacion);
             this.gbAnimacion.Controls.Add(this.lblEstadoAnim);
             this.gbAnimacion.Controls.Add(this.lblLeyendaAnim);
 
-            this.panelAnimacion.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
-                | System.Windows.Forms.AnchorStyles.Left)
-                | System.Windows.Forms.AnchorStyles.Right)));
+            this.panelAnimacion.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left))));
             this.panelAnimacion.BackColor = System.Drawing.Color.FromArgb(245, 248, 255);
             this.panelAnimacion.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this.panelAnimacion.Location = new System.Drawing.Point(12, 50);
             this.panelAnimacion.Name = "panelAnimacion";
-            this.panelAnimacion.Size = new System.Drawing.Size(816, 600);
+            this.panelAnimacion.Size = new System.Drawing.Size(736, 428);
             this.panelAnimacion.Paint += new System.Windows.Forms.PaintEventHandler(this.panelAnimacion_Paint);
 
             this.lblEstadoAnim.AutoSize = true;

@@ -287,7 +287,7 @@ namespace Taller2MovimientoParabolico
             }
             else
             {
-                lblObjetivo.Text = "(no generado)";
+                lblObjetivo.Text = "—";
                 lblObjetivoHit.Text = "";
             }
         }
@@ -325,9 +325,18 @@ namespace Taller2MovimientoParabolico
                 simulacionPausada = false;
                 ActualizarEstadoBotones();
                 ActualizarLabelEstadoAnim("Estado: finalizada");
-                statusLabel.Text = string.Format(CultureInfo.InvariantCulture,
-                    "Simulación finalizada. Tiempo total: {0:0.###} s. Colisiones: {1}.",
-                    simulador.TiempoTotalVueloSim, simulador.Colisiones.Count);
+                if (simulador.TerminadoPorTopeMuestras)
+                {
+                    statusLabel.Text = string.Format(CultureInfo.InvariantCulture,
+                        "Simulación finalizada por tope de seguridad ({0} muestras). Tiempo total: {1:0.###} s. Colisiones: {2}.",
+                        Simulador.TopeMuestras, simulador.TiempoTotalVueloSim, simulador.Colisiones.Count);
+                }
+                else
+                {
+                    statusLabel.Text = string.Format(CultureInfo.InvariantCulture,
+                        "Simulación finalizada. Tiempo total: {0:0.###} s. Colisiones: {1}.",
+                        simulador.TiempoTotalVueloSim, simulador.Colisiones.Count);
+                }
                 MostrarResultadosFinales();
             }
         }
@@ -614,16 +623,10 @@ namespace Taller2MovimientoParabolico
         {
             if (simulador == null) return;
 
-            // Calcular el "mundo" a visualizar: usamos el alcance y la altura máxima teóricos.
-            double angRad = simulador.AnguloGrados * Math.PI / 180.0;
-            double v0x = simulador.V0 * Math.Cos(angRad);
-            double v0y = simulador.V0 * Math.Sin(angRad);
-            double tTeor = ModeloTeorico.TiempoTotalVuelo(simulador.Y0, v0y, simulador.Gravedad);
-            double xAlcanceTeor = ModeloTeorico.Alcance(simulador.X0, v0x, tTeor);
-            double yMaxTeor = ModeloTeorico.AlturaMaxima(simulador.Y0, v0y, simulador.Gravedad);
-
-            mundoXMax = Math.Max(xAlcanceTeor, simulador.X0) + 5;
-            mundoYMax = Math.Max(yMaxTeor, simulador.Y0) + 2;
+            // El simulador ya calcula los límites del mundo físico en Iniciar();
+            // los usamos para el escalado del panel de animación.
+            mundoXMax = simulador.MundoXMax;
+            mundoYMax = simulador.MundoYMax;
         }
 
         private void panelAnimacion_Paint(object sender, PaintEventArgs e)
@@ -712,6 +715,24 @@ namespace Taller2MovimientoParabolico
                 }
             }
 
+            // 4 paredes del mundo físico (marco de referencia sutil sobre la grilla).
+            float worldXMinPx = origenXpx + offsetXExtra;
+            float worldXMaxPx = origenXpx + offsetXExtra + (float)mundoXMax * escala;
+            float worldYMinPx = origenYpx;
+            float worldYMaxPx = origenYpx - (float)mundoYMax * escala;
+            using (Pen penBounds = new Pen(Color.LightSlateGray, 1f))
+            {
+                penBounds.DashStyle = DashStyle.Dash;
+                // Techo
+                g.DrawLine(penBounds, worldXMinPx, worldYMaxPx, worldXMaxPx, worldYMaxPx);
+                // Suelo
+                g.DrawLine(penBounds, worldXMinPx, worldYMinPx, worldXMaxPx, worldYMinPx);
+                // Izquierda
+                g.DrawLine(penBounds, worldXMinPx, worldYMinPx, worldXMinPx, worldYMaxPx);
+                // Derecha
+                g.DrawLine(penBounds, worldXMaxPx, worldYMinPx, worldXMaxPx, worldYMaxPx);
+            }
+
             // Objetivo
             if (simulador.ObjetivoDefinido)
             {
@@ -751,7 +772,7 @@ namespace Taller2MovimientoParabolico
             {
                 float px = origenXpx + (float)ultimaMuestra.X * escala;
                 float py = origenYpx - (float)ultimaMuestra.Y * escala;
-                float r = Math.Max(5f, escala * 4f);
+                float r = 10f;
                 using (Brush brY = new SolidBrush(Color.FromArgb(220, 30, 30)))
                 using (Pen penY = new Pen(Color.Black, 1f))
                 {

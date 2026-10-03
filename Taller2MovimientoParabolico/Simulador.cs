@@ -27,6 +27,11 @@ namespace Taller2MovimientoParabolico
         public bool ObjetivoDefinido { get; private set; }
         public bool ObjetivoImpactado { get; private set; }
 
+        /// <summary>Límite derecho del mundo físico (usado para colisión con la pared Derecha).</summary>
+        public double MundoXMax { get; private set; }
+        /// <summary>Límite superior del mundo físico (usado para colisión con el Techo).</summary>
+        public double MundoYMax { get; private set; }
+
         // Estado interno
         private double t;
         private double x;
@@ -35,6 +40,11 @@ namespace Taller2MovimientoParabolico
         private double vy;
         private int rebotesSuelo;
         private bool terminado;
+
+        /// <summary>Tope de seguridad: número máximo de muestras para evitar loops infinitos.</summary>
+        public const int TopeMuestras = 5000;
+        /// <summary>True si la simulación terminó porque se alcanzó <see cref="TopeMuestras"/>.</summary>
+        public bool TerminadoPorTopeMuestras { get; private set; }
 
         // Resultados
         public List<Muestra> Muestras { get; private set; }
@@ -143,19 +153,32 @@ namespace Taller2MovimientoParabolico
 
         /// <summary>
         /// Prepara el estado para iniciar (o reiniciar) la simulación.
+        /// Calcula el tamaño del mundo físico (mundoXMax, mundoYMax) a partir
+        /// del alcance y la altura máxima analíticos, con un margen de 5 m en X
+        /// y 2 m en Y. Estos límites se usan para detectar colisiones contra
+        /// las 4 paredes (Suelo, Techo, Izquierda, Derecha).
         /// </summary>
         public void Iniciar()
         {
             double angRad = anguloARadianes();
+            double v0xT = V0 * Math.Cos(angRad);
+            double v0yT = V0 * Math.Sin(angRad);
+            double tTeor = ModeloTeorico.TiempoTotalVuelo(Y0, v0yT, Gravedad);
+            double xAlcanceTeor = ModeloTeorico.Alcance(X0, v0xT, tTeor);
+            double yMaxTeor = ModeloTeorico.AlturaMaxima(Y0, v0yT, Gravedad);
+            MundoXMax = Math.Max(xAlcanceTeor, X0) + 5;
+            MundoYMax = Math.Max(yMaxTeor, Y0) + 2;
+
             t = 0;
             x = X0;
             y = Y0;
-            vx = V0 * Math.Cos(angRad);
-            vy = V0 * Math.Sin(angRad);
+            vx = v0xT;
+            vy = v0yT;
 
             rebotesSuelo = 0;
             ObjetivoImpactado = false;
             terminado = false;
+            TerminadoPorTopeMuestras = false;
 
             Muestras = new List<Muestra>();
             Colisiones = new ColisionesList();
@@ -302,6 +325,114 @@ namespace Taller2MovimientoParabolico
                 }
             }
 
+            // --- Colisión con techo (y >= mundoYMax) ---
+            // El proyectil sube y choca el borde superior del mundo; rebota hacia abajo
+            // con vy -> -0.6 * |vy|. vx no se modifica.
+            if (MundoYMax > 0 && yPrev < MundoYMax && yNext >= MundoYMax)
+            {
+                double ratio = (MundoYMax - yPrev) / (yNext - yPrev);
+                double tCross = tPrev + DT * ratio;
+                double xCross = xPrev + vxPrev * DT * ratio;
+                double vyCross = vyPrev - Gravedad * DT * ratio;
+
+                double vxDespues = vxPrev;
+                double vyDespues = -0.6 * Math.Abs(vyCross);
+
+                RegistrarColisionPared(TipoColision.Techo, tCross, xCross, MundoYMax,
+                    vxPrev, vyCross, vxDespues, vyDespues);
+
+                t = tCross;
+                x = xCross;
+                y = MundoYMax;
+                vx = vxDespues;
+                vy = vyDespues;
+
+                Muestras.Add(new Muestra(t, x, y, vx, vy));
+                ActualizarMaximos();
+
+                if (Muestras.Count >= TopeMuestras)
+                {
+                    TerminadoPorTopeMuestras = true;
+                    terminado = true;
+                    TiempoFinalSim = t;
+                    AlcanceFinalSim = x;
+                    return false;
+                }
+                return true;
+            }
+
+            // --- Colisión con pared izquierda (x <= 0) ---
+            // El proyectil retrocede y choca el borde izquierdo; rebota hacia la derecha
+            // con vx -> 0.6 * |vx|. vy no se modifica.
+            if (xPrev > 0 && xNext <= 0)
+            {
+                double ratio = (0 - xPrev) / (xNext - xPrev);
+                double tCross = tPrev + DT * ratio;
+                double yCross = yPrev + vyPrev * DT * ratio;
+                double vyCross = vyPrev - Gravedad * DT * ratio;
+
+                double vxDespues = 0.6 * Math.Abs(vxPrev);
+                double vyDespues = vyCross;
+
+                RegistrarColisionPared(TipoColision.Izquierda, tCross, 0, yCross,
+                    vxPrev, vyCross, vxDespues, vyDespues);
+
+                t = tCross;
+                x = 0;
+                y = yCross;
+                vx = vxDespues;
+                vy = vyDespues;
+
+                Muestras.Add(new Muestra(t, x, y, vx, vy));
+                ActualizarMaximos();
+
+                if (Muestras.Count >= TopeMuestras)
+                {
+                    TerminadoPorTopeMuestras = true;
+                    terminado = true;
+                    TiempoFinalSim = t;
+                    AlcanceFinalSim = x;
+                    return false;
+                }
+                return true;
+            }
+
+            // --- Colisión con pared derecha (x >= mundoXMax) ---
+            // El proyectil avanza y choca el borde derecho; rebota hacia la izquierda
+            // con vx -> -0.6 * |vx|. vy no se modifica.
+            if (MundoXMax > 0 && xPrev < MundoXMax && xNext >= MundoXMax)
+            {
+                double ratio = (MundoXMax - xPrev) / (xNext - xPrev);
+                double tCross = tPrev + DT * ratio;
+                double yCross = yPrev + vyPrev * DT * ratio;
+                double vyCross = vyPrev - Gravedad * DT * ratio;
+
+                double vxDespues = -0.6 * Math.Abs(vxPrev);
+                double vyDespues = vyCross;
+
+                RegistrarColisionPared(TipoColision.Derecha, tCross, MundoXMax, yCross,
+                    vxPrev, vyCross, vxDespues, vyDespues);
+
+                t = tCross;
+                x = MundoXMax;
+                y = yCross;
+                vx = vxDespues;
+                vy = vyDespues;
+
+                Muestras.Add(new Muestra(t, x, y, vx, vy));
+                ActualizarMaximos();
+
+                if (Muestras.Count >= TopeMuestras)
+                {
+                    TerminadoPorTopeMuestras = true;
+                    terminado = true;
+                    TiempoFinalSim = t;
+                    AlcanceFinalSim = x;
+                    return false;
+                }
+                return true;
+            }
+
             // --- Avance normal ---
             t = tNext;
             x = xNext;
@@ -311,6 +442,15 @@ namespace Taller2MovimientoParabolico
 
             Muestras.Add(new Muestra(t, x, y, vx, vy));
             ActualizarMaximos();
+
+            if (Muestras.Count >= TopeMuestras)
+            {
+                TerminadoPorTopeMuestras = true;
+                terminado = true;
+                TiempoFinalSim = t;
+                AlcanceFinalSim = x;
+                return false;
+            }
             return true;
         }
 
@@ -389,6 +529,30 @@ namespace Taller2MovimientoParabolico
                 VyAntes = vyAntes,
                 VxDespues = vxD,
                 VyDespues = vyD
+            };
+            Colisiones.Add(c);
+        }
+
+        /// <summary>
+        /// Registra una colisión contra una pared del mundo (Techo, Izquierda, Derecha).
+        /// A diferencia del Suelo y el Objetivo, el número de impacto es simplemente el
+        /// orden global en la que ocurren (no hay conteo separado por pared).
+        /// </summary>
+        private void RegistrarColisionPared(TipoColision tipo, double tCross, double xCross, double yCross,
+                                            double vxAntes, double vyAntes,
+                                            double vxDespues, double vyDespues)
+        {
+            var c = new Colision
+            {
+                Tipo = tipo,
+                Numero = Colisiones.Count + 1,
+                Tiempo = tCross,
+                X = xCross,
+                Y = yCross,
+                VxAntes = vxAntes,
+                VyAntes = vyAntes,
+                VxDespues = vxDespues,
+                VyDespues = vyDespues
             };
             Colisiones.Add(c);
         }
