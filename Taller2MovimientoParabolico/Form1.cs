@@ -9,7 +9,6 @@ namespace Taller2MovimientoParabolico
 {
     public partial class Form1 : Form
     {
-        // Estado de la simulación
         private Simulador simulador;
         private Random rnd;
         private bool simulacionActiva;
@@ -54,9 +53,7 @@ namespace Taller2MovimientoParabolico
             DetenerTimer();
         }
 
-        // ============================================================
-        // Configuración inicial de los DataGridView (columnas y formato)
-        // ============================================================
+        // Configuración DataGridView
         private void ConfigurarDataGridViews()
         {
             // Comparación teórico vs simulación
@@ -91,9 +88,7 @@ namespace Taller2MovimientoParabolico
             dgvColisiones.Columns.Add("angD", "θ después (°)");
         }
 
-        // ============================================================
         // Lectura y validación de parámetros
-        // ============================================================
         private bool LeerParametros(out double x0, out double y0, out double v0,
                                     out double angulo, out double gravedad, out double dt,
                                     out string mensajeError)
@@ -139,9 +134,7 @@ namespace Taller2MovimientoParabolico
             return double.TryParse(s.Replace(',', '.'), NumberStyles.Float, CultureInfo.InvariantCulture, out v);
         }
 
-        // ============================================================
         // Botones de control de simulación
-        // ============================================================
         private void btnIniciar_Click(object sender, EventArgs e)
         {
             if (simulacionActiva && !simulacionPausada) return;
@@ -157,7 +150,7 @@ namespace Taller2MovimientoParabolico
 
             if (simulador == null || !MismosParametros(x0, y0, v0, angulo, gravedad, dt))
             {
-                // Construir (o reconstruir) el simulador con un nuevo objetivo aleatorio.
+                // Construir el simulador con un nuevo objetivo aleatorio.
                 simulador = new Simulador(x0, y0, v0, angulo, gravedad, dt,
                     chkGenerarObjetivo.Checked ? rnd : null);
                 simulador.Iniciar();
@@ -296,10 +289,7 @@ namespace Taller2MovimientoParabolico
         {
             lblEstadoAnim.Text = texto;
         }
-
-        // ============================================================
-        // Bucle principal de la simulación (timer)
-        // ============================================================
+        // timer
         private void timerSimulacion_Tick(object sender, EventArgs e)
         {
             if (simulador == null) return;
@@ -340,10 +330,7 @@ namespace Taller2MovimientoParabolico
                 MostrarResultadosFinales();
             }
         }
-
-        // ============================================================
         // Métricas en tiempo real
-        // ============================================================
         private void ActualizarMetricas(Muestra m)
         {
             if (m == null) return;
@@ -411,9 +398,7 @@ namespace Taller2MovimientoParabolico
             graficaTheta.Invalidate();
         }
 
-        // ============================================================
         // Resultados finales: tablas, valores y gráficas
-        // ============================================================
         private void MostrarResultadosFinales()
         {
             if (simulador == null) return;
@@ -513,9 +498,7 @@ namespace Taller2MovimientoParabolico
             return v.ToString("0.000", CultureInfo.InvariantCulture);
         }
 
-        // ============================================================
         // Construcción de las gráficas
-        // ============================================================
         private void DibujarGraficas()
         {
             if (simulador == null) return;
@@ -616,9 +599,6 @@ namespace Taller2MovimientoParabolico
             tabControl.SelectedIndex = 3;
         }
 
-        // ============================================================
-        // Pintado del panel de animación
-        // ============================================================
         private void PrepararAnimacion()
         {
             if (simulador == null) return;
