@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Globalization;
@@ -9,7 +10,10 @@ namespace Taller2MovimientoParabolico
 {
     /// <summary>
     /// Marcador que se dibuja encima de la curva (puntos de máximo, impacto, rebote...).
+    /// Marcado Serializable para que el Diseñador de WinForms pueda persistirlo
+    /// si alguna vez lo necesita serializar.
     /// </summary>
+    [Serializable]
     public class MarcadorGrafica
     {
         public double X { get; set; }
@@ -52,8 +56,15 @@ namespace Taller2MovimientoParabolico
         public string UnidadX { get; set; }
         public string EtiquetaY { get; set; }
         public string UnidadY { get; set; }
+
+        // Propiedades que se asignan en tiempo de ejecución (no las serializa el Diseñador).
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public List<PointF> Puntos { get; set; }
+
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public List<MarcadorGrafica> Marcadores { get; set; }
+
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public Color ColorCurvaPersonalizado { get; set; }
 
         public GraficaControl()
