@@ -10,7 +10,8 @@ namespace Taller2MovimientoParabolico
         Suelo,
         Techo,
         Izquierda,
-        Derecha
+        Derecha,
+        Objetivo
     }
 
     /// <summary>

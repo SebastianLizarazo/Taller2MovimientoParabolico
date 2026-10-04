@@ -40,6 +40,17 @@ namespace Taller2MovimientoParabolico
         /// <summary>True si la simulación terminó porque se alcanzó <see cref="TopeMuestras"/>.</summary>
         public bool TerminadoPorTopeMuestras { get; private set; }
 
+        /// <summary>
+        /// Objetivo horizontal fijo generado al iniciar la simulación.
+        /// Es null hasta que se llama a <see cref="Iniciar"/>.
+        /// </summary>
+        public Objetivo Objetivo { get; private set; }
+
+        // Generador de números aleatorios para el objetivo.
+        private Random rng;
+        // Marca interna: ya se registró el impacto contra el objetivo en esta corrida.
+        private bool objetivoGolpeado;
+
         // Resultados
         public List<Muestra> Muestras { get; private set; }
         public List<Colision> Colisiones { get; private set; }
@@ -71,6 +82,7 @@ namespace Taller2MovimientoParabolico
             AnguloGrados = anguloGrados;
             Gravedad = gravedad;
             DT = dt;
+            rng = new Random();
         }
 
         /// <summary>
@@ -90,6 +102,9 @@ namespace Taller2MovimientoParabolico
             double yMaxTeor = ModeloTeorico.AlturaMaxima(Y0, v0yT, Gravedad);
             MundoXMax = Math.Max(xAlcanceTeor, X0) + 5;
             MundoYMax = Math.Max(yMaxTeor, Y0) + 2;
+
+            GenerarObjetivo();
+            objetivoGolpeado = false;
 
             t = 0;
             x = X0;
@@ -121,6 +136,66 @@ namespace Taller2MovimientoParabolico
         }
 
         /// <summary>
+        /// Genera un objetivo horizontal aleatorio para esta corrida, ubicándolo
+        /// en una zona razonable del plano de la trayectoria esperada. Se sitúa
+        /// en X entre el 10 % y el 60 % del alcance teórico (medido desde X0),
+        /// con un ancho entre el 10 % y el 25 % de ese rango, y a una altura
+        /// entre el 20 % y el 70 % de la altura máxima teórica.
+        /// </summary>
+        private void GenerarObjetivo()
+        {
+            double angRad = anguloARadianes();
+            double v0xT = V0 * Math.Cos(angRad);
+            double v0yT = V0 * Math.Sin(angRad);
+            double tTeor = ModeloTeorico.TiempoTotalVuelo(Y0, v0yT, Gravedad);
+            double alcanceTeor = ModeloTeorico.Alcance(X0, v0xT, tTeor);
+            double alturaMaxTeor = ModeloTeorico.AlturaMaxima(Y0, v0yT, Gravedad);
+
+            // Rango horizontal total sobre el que se ubicará el objetivo. Si el alcance
+            // cae antes de X0 (v0x <= 0), usamos un rango positivo mínimo para no
+            // degenerar la selección aleatoria; en ese caso el objetivo quedará donde
+            // pueda y el proyectil simplemente no lo impactará.
+            double rangeX = alcanceTeor - X0;
+            if (rangeX <= 0) rangeX = Math.Max(Math.Max(alcanceTeor, X0), 1.0);
+
+            double xMinBase = X0 + 0.1 * rangeX;
+            double xMaxBase = X0 + 0.6 * rangeX;
+            // Si la base es degenerada, la llevamos a X0 y damos un ancho mínimo.
+            if (xMaxBase <= xMinBase) xMaxBase = xMinBase + 0.5 * rangeX;
+
+            double minWidth = 0.1 * rangeX;
+            double maxWidth = 0.25 * rangeX;
+            if (maxWidth < minWidth) maxWidth = minWidth;
+
+            // Dejamos margen suficiente para que el ancho entre sin pisar el borde.
+            double espacioParaAncho = Math.Max(0, xMaxBase - xMinBase - maxWidth);
+            double xMinObj = xMinBase + rng.NextDouble() * espacioParaAncho;
+            double width = minWidth + rng.NextDouble() * (maxWidth - minWidth);
+            double xMaxObj = xMinObj + width;
+
+            // Sanity check: garantizar xMinObj < xMaxObj.
+            if (xMaxObj <= xMinObj)
+            {
+                xMaxObj = xMinObj + minWidth;
+            }
+            if (xMaxObj > xMaxBase)
+            {
+                xMaxObj = xMaxBase;
+                xMinObj = Math.Max(xMinBase, xMaxObj - maxWidth);
+                if (xMinObj >= xMaxObj) xMinObj = Math.Max(xMinBase, xMaxObj - minWidth);
+            }
+
+            // Altura objetivo: entre 20 % y 70 % de la altura máxima teórica.
+            double yMinObj = 0.2 * alturaMaxTeor;
+            double yMaxObj = 0.7 * alturaMaxTeor;
+            if (yMaxObj <= yMinObj) yMaxObj = yMinObj + 0.5 * alturaMaxTeor;
+            double yObj = yMinObj + rng.NextDouble() * (yMaxObj - yMinObj);
+            if (alturaMaxTeor <= 0 || yObj <= 0) yObj = 1.0;
+
+            Objetivo = new Objetivo(xMinObj, xMaxObj, yObj, 0.2);
+        }
+
+        /// <summary>
         /// Avanza la simulación un paso de tiempo dt.
         /// Devuelve true si la simulación continúa; false si ya terminó.
         /// </summary>
@@ -138,6 +213,40 @@ namespace Taller2MovimientoParabolico
             double xNext = xPrev + vxPrev * DT;
             double yNext = yPrev + vyPrev * DT;
             double vyNext = vyPrev - Gravedad * DT;
+
+            // --- Colisión con objetivo (barra horizontal) ---
+            // Se detecta el cruce descendente del plano Y del objetivo, siempre que
+            // la posición horizontal esté dentro del rango [XMin, XMax]. Es el primer
+            // impacto de la cadena; los siguientes impactos siguen siendo contra el suelo.
+            if (!objetivoGolpeado && Objetivo != null
+                && yPrev > Objetivo.Y && yNext <= Objetivo.Y
+                && xNext >= Objetivo.XMin && xNext <= Objetivo.XMax)
+            {
+                double ratio = (yPrev - Objetivo.Y) / (yPrev - yNext);
+                double tCross = tPrev + DT * ratio;
+                double xCross = xPrev + vxPrev * DT * ratio;
+                double vyCross = vyPrev - Gravedad * DT * ratio;
+
+                // Rebote: la magnitud de la velocidad se reduce al 60 % y la componente
+                // vertical cambia de sentido (equivalente a multiplicar ambas componentes
+                // por 0.6 e invertir vy).
+                double vxNew = 0.6 * vxPrev;
+                double vyNew = -0.6 * vyCross;
+
+                RegistrarColisionObjetivo(tCross, xCross, Objetivo.Y,
+                    vxPrev, vyCross, vxNew, vyNew);
+
+                t = tCross;
+                x = xCross;
+                y = Objetivo.Y;
+                vx = vxNew;
+                vy = vyNew;
+                objetivoGolpeado = true;
+
+                Muestras.Add(new Muestra(t, x, y, vx, vy));
+                ActualizarMaximos();
+                return true;
+            }
 
             // --- Colisión con suelo ---
             if (yNext <= 0 && yPrev > 0)
@@ -419,6 +528,30 @@ namespace Taller2MovimientoParabolico
             var c = new Colision
             {
                 Tipo = tipo,
+                Numero = Colisiones.Count + 1,
+                Tiempo = tCross,
+                X = xCross,
+                Y = yCross,
+                VxAntes = vxAntes,
+                VyAntes = vyAntes,
+                VxDespues = vxDespues,
+                VyDespues = vyDespues
+            };
+            Colisiones.Add(c);
+        }
+
+        /// <summary>
+        /// Registra la colisión contra el objetivo horizontal. Sigue el mismo
+        /// patrón que <see cref="RegistrarColisionPared"/> pero tipifica la
+        /// colisión como <see cref="TipoColision.Objetivo"/>.
+        /// </summary>
+        private void RegistrarColisionObjetivo(double tCross, double xCross, double yCross,
+                                               double vxAntes, double vyAntes,
+                                               double vxDespues, double vyDespues)
+        {
+            var c = new Colision
+            {
+                Tipo = TipoColision.Objetivo,
                 Numero = Colisiones.Count + 1,
                 Tiempo = tCross,
                 X = xCross,

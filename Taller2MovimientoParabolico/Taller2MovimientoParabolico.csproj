@@ -56,6 +56,7 @@
     <Compile Include="GraficaControl.cs" />
     <Compile Include="ModeloTeorico.cs" />
     <Compile Include="Muestra.cs" />
+    <Compile Include="Objetivo.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ResultadoComparacion.cs" />

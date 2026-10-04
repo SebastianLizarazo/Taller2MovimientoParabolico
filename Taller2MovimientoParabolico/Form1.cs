@@ -684,6 +684,34 @@ namespace Taller2MovimientoParabolico
                 g.DrawLine(penBounds, worldXMaxPx, worldYMinPx, worldXMaxPx, worldYMaxPx);
             }
 
+            // Objetivo horizontal (barra fija).
+            if (simulador.Objetivo != null)
+            {
+                float objXMinPx = origenXpx + (float)simulador.Objetivo.XMin * escala;
+                float objXMaxPx = origenXpx + (float)simulador.Objetivo.XMax * escala;
+                float objYCtrPx = origenYpx - (float)simulador.Objetivo.Y * escala;
+                float grosorPx = Math.Max(3f, escala * (float)simulador.Objetivo.Alto);
+                float objYTopPx = objYCtrPx - grosorPx / 2f;
+                float objYBotPx = objYCtrPx + grosorPx / 2f;
+
+                using (Brush brushObj = new SolidBrush(Color.FromArgb(200, 255, 140, 0)))
+                using (Pen penObj = new Pen(Color.Black, 1.2f))
+                {
+                    g.FillRectangle(brushObj, objXMinPx, objYTopPx, objXMaxPx - objXMinPx, grosorPx);
+                    g.DrawRectangle(penObj, objXMinPx, objYTopPx, objXMaxPx - objXMinPx, grosorPx);
+                }
+                using (Font fObj = new Font("Segoe UI", 8F, FontStyle.Bold))
+                using (Brush brushTxtObj = new SolidBrush(Color.FromArgb(200, 120, 0)))
+                {
+                    string etiqueta = "OBJETIVO";
+                    SizeF tam = g.MeasureString(etiqueta, fObj);
+                    float tx = objXMinPx + (objXMaxPx - objXMinPx - tam.Width) / 2f;
+                    float ty = objYTopPx - tam.Height - 2f;
+                    if (ty < 0) ty = objYBotPx + 2f;
+                    g.DrawString(etiqueta, fObj, brushTxtObj, tx, ty);
+                }
+            }
+
             // Trayectoria (curva)
             if (trayectoriaParaDibujar.Count > 1)
             {
