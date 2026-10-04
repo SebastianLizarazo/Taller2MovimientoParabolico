@@ -628,11 +628,11 @@ namespace Taller2MovimientoParabolico
             using (Font fTxt = new Font("Segoe UI", 8F))
             {
                 // Suelo
-                g.DrawLine(penEje, origenXpx + offsetXExtra - 5, origenYpx,
-                    origenXpx + offsetXExtra + anchoDisponible + 5, origenYpx);
+                g.DrawLine(penEje, origenXpx - 5, origenYpx,
+                    origenXpx + anchoDisponible + 5, origenYpx);
 
                 // Eje Y
-                g.DrawLine(penEje, origenXpx, origenYpx - altoDisponible - 5 + offsetYExtra,
+                g.DrawLine(penEje, origenXpx, origenYpx - altoDisponible - 5,
                     origenXpx, origenYpx + 5);
 
                 // Tics y grilla cada cierta cantidad de metros
@@ -640,16 +640,16 @@ namespace Taller2MovimientoParabolico
 
                 for (int xm = 0; xm <= mundoAncho; xm += stepMetros)
                 {
-                    float px = origenXpx + offsetXExtra + xm * escala;
-                    g.DrawLine(penGrilla, px, origenYpx - altoDisponible + offsetYExtra, px, origenYpx);
+                    float px = origenXpx + xm * escala;
+                    g.DrawLine(penGrilla, px, origenYpx - altoDisponible, px, origenYpx);
                     g.DrawLine(penEje, px, origenYpx - 4, px, origenYpx + 4);
                     g.DrawString(xm + " m", fTxt, brushTxt, px - 10, origenYpx + 6);
                 }
                 for (int ym = 0; ym <= mundoAlto; ym += stepMetros)
                 {
                     float py = origenYpx - ym * escala;
-                    g.DrawLine(penGrilla, origenXpx + offsetXExtra, py,
-                        origenXpx + offsetXExtra + anchoDisponible, py);
+                    g.DrawLine(penGrilla, origenXpx, py,
+                        origenXpx + anchoDisponible, py);
                     g.DrawLine(penEje, origenXpx - 4, py, origenXpx + 4, py);
                     g.DrawString(ym + " m", fTxt, brushTxt, origenXpx - 30, py - 7);
                 }
@@ -658,17 +658,19 @@ namespace Taller2MovimientoParabolico
                 using (Font fEje = new Font("Segoe UI", 9F, FontStyle.Bold))
                 {
                     g.DrawString("x (m)", fEje, brushTxt,
-                        origenXpx + offsetXExtra + anchoDisponible - 30,
+                        origenXpx + anchoDisponible - 30,
                         origenYpx + 18);
                     g.DrawString("y (m)", fEje, brushTxt,
                         origenXpx - 40,
-                        origenYpx - altoDisponible + offsetYExtra - 5);
+                        origenYpx - altoDisponible - 5);
                 }
             }
 
             // 4 paredes del mundo físico (marco de referencia sutil sobre la grilla).
-            float worldXMinPx = origenXpx + offsetXExtra;
-            float worldXMaxPx = origenXpx + offsetXExtra + (float)mundoXMax * escala;
+            // origenXpx/origenYpx ya incluyen los offsets para centrar el mundo dentro
+            // del área disponible; no hay que sumar offsetXExtra/offsetYExtra de nuevo.
+            float worldXMinPx = origenXpx;
+            float worldXMaxPx = origenXpx + (float)mundoXMax * escala;
             float worldYMinPx = origenYpx;
             float worldYMaxPx = origenYpx - (float)mundoYMax * escala;
             using (Pen penBounds = new Pen(Color.LightSlateGray, 1f))
