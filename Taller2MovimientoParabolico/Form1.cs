@@ -96,14 +96,14 @@ namespace Taller2MovimientoParabolico
             x0 = y0 = v0 = angulo = gravedad = dt = 0;
             mensajeError = null;
 
-            if (!TryParse(txtX0.Text, out x0))
+            if (!TryParse(txtX0.Text, out x0) || x0 < 0 || x0 > 100)
             {
-                mensajeError = "La posición horizontal inicial no es un número válido.";
+                mensajeError = "La posición horizontal inicial debe estar entre 0 m y 100 m.";
                 return false;
             }
-            if (!TryParse(txtY0.Text, out y0) || y0 < 0)
+            if (!TryParse(txtY0.Text, out y0) || y0 < 0 || y0 > 50)
             {
-                mensajeError = "La altura inicial debe ser un número no negativo.";
+                mensajeError = "La altura inicial debe estar entre 0 m y 50 m.";
                 return false;
             }
             if (!TryParse(txtV0.Text, out v0) || v0 <= 0)

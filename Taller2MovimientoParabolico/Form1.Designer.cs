@@ -240,9 +240,9 @@
             this.lblX0.AutoSize = true;
             this.lblX0.Location = new System.Drawing.Point(14, 30);
             this.lblX0.Name = "lblX0";
-            this.lblX0.Size = new System.Drawing.Size(224, 20);
+            this.lblX0.Size = new System.Drawing.Size(300, 20);
             this.lblX0.TabIndex = 0;
-            this.lblX0.Text = "Posición horizontal inicial x₀ (m):";
+            this.lblX0.Text = "Posición horizontal inicial x₀ (m, máx. 100):";
             // 
             // txtX0
             // 
@@ -257,9 +257,9 @@
             this.lblY0.AutoSize = true;
             this.lblY0.Location = new System.Drawing.Point(14, 83);
             this.lblY0.Name = "lblY0";
-            this.lblY0.Size = new System.Drawing.Size(139, 20);
+            this.lblY0.Size = new System.Drawing.Size(195, 20);
             this.lblY0.TabIndex = 2;
-            this.lblY0.Text = "Altura inicial y₀ (m):";
+            this.lblY0.Text = "Altura inicial y₀ (m, máx. 50):";
             // 
             // txtY0
             // 
