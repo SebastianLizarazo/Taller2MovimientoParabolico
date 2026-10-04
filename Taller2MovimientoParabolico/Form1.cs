@@ -10,7 +10,6 @@ namespace Taller2MovimientoParabolico
     public partial class Form1 : Form
     {
         private Simulador simulador;
-        private Random rnd;
         private bool simulacionActiva;
         private bool simulacionPausada;
         private int pasosPorTick; // cuántos pasos de simulación se ejecutan por tick del Timer
@@ -36,15 +35,12 @@ namespace Taller2MovimientoParabolico
 
         private void Form1_Load(object sender, EventArgs e)
         {
-            rnd = new Random();
             simulacionActiva = false;
             simulacionPausada = false;
             trayectoriaParaDibujar = new List<PointF>();
             ultimaMuestra = null;
             ConfigurarDataGridViews();
 
-            // Estado inicial: el objetivo no existe hasta iniciar.
-            ActualizarLabelObjetivo();
             statusLabel.Text = "Configure las condiciones iniciales y presione Iniciar.";
         }
 
@@ -150,9 +146,7 @@ namespace Taller2MovimientoParabolico
 
             if (simulador == null || !MismosParametros(x0, y0, v0, angulo, gravedad, dt))
             {
-                // Construir el simulador con un nuevo objetivo aleatorio.
-                simulador = new Simulador(x0, y0, v0, angulo, gravedad, dt,
-                    chkGenerarObjetivo.Checked ? rnd : null);
+                simulador = new Simulador(x0, y0, v0, angulo, gravedad, dt);
                 simulador.Iniciar();
                 trayectoriaParaDibujar = new List<PointF>();
                 PrepararAnimacion();
@@ -173,7 +167,6 @@ namespace Taller2MovimientoParabolico
             simulacionActiva = true;
             simulacionPausada = false;
             ActualizarEstadoBotones();
-            ActualizarLabelObjetivo();
             ActualizarLabelEstadoAnim("Estado: en ejecución");
             statusLabel.Text = "Simulación en curso...";
             timerSimulacion.Start();
@@ -224,7 +217,6 @@ namespace Taller2MovimientoParabolico
             trayectoriaParaDibujar = new List<PointF>();
             ultimaMuestra = null;
             ActualizarEstadoBotones();
-            ActualizarLabelObjetivo();
             ActualizarLabelEstadoAnim("Estado: detenido");
             LimpiarMetricasYResultados();
             statusLabel.Text = "Nueva simulación. Configure los parámetros e Iniciar.";
@@ -264,25 +256,6 @@ namespace Taller2MovimientoParabolico
             txtAngulo.Enabled = !simulacionActiva;
             txtGravedad.Enabled = !simulacionActiva;
             txtDt.Enabled = !simulacionActiva;
-            chkGenerarObjetivo.Enabled = !simulacionActiva;
-        }
-
-        private void ActualizarLabelObjetivo()
-        {
-            if (simulador != null && simulador.ObjetivoDefinido)
-            {
-                lblObjetivo.Text = string.Format(CultureInfo.InvariantCulture,
-                    "y = {0:0.##} m, x ∈ [{1:0.##}, {2:0.##}] m",
-                    simulador.ObjetivoY, simulador.ObjetivoXMin, simulador.ObjetivoXMax);
-                lblObjetivoHit.Text = simulador.ObjetivoImpactado
-                    ? "Objetivo impactado"
-                    : "";
-            }
-            else
-            {
-                lblObjetivo.Text = "—";
-                lblObjetivoHit.Text = "";
-            }
         }
 
         private void ActualizarLabelEstadoAnim(string texto)
@@ -559,10 +532,8 @@ namespace Taller2MovimientoParabolico
             // Colisiones
             foreach (var c in simulador.Colisiones)
             {
-                Color color = c.Tipo == TipoColision.Objetivo ? Color.OrangeRed : Color.DarkRed;
-                string etiqueta = c.Tipo == TipoColision.Objetivo
-                    ? string.Format("Obj #{0}", c.Numero)
-                    : string.Format("Suelo #{0}", c.Numero);
+                Color color = Color.DarkRed;
+                string etiqueta = string.Format("{0} #{1}", c.Tipo, c.Numero);
                 makersYt.Add(new MarcadorGrafica(c.Tiempo, c.Y, etiqueta, color));
                 makersXt.Add(new MarcadorGrafica(c.Tiempo, c.X, etiqueta, color));
                 makersYx.Add(new MarcadorGrafica(c.X, c.Y, etiqueta, color));
@@ -711,23 +682,6 @@ namespace Taller2MovimientoParabolico
                 g.DrawLine(penBounds, worldXMinPx, worldYMinPx, worldXMinPx, worldYMaxPx);
                 // Derecha
                 g.DrawLine(penBounds, worldXMaxPx, worldYMinPx, worldXMaxPx, worldYMaxPx);
-            }
-
-            // Objetivo
-            if (simulador.ObjetivoDefinido)
-            {
-                float py = origenYpx - (float)simulador.ObjetivoY * escala;
-                float px0 = origenXpx + (float)(simulador.ObjetivoXMin - 0) * escala;
-                float px1 = origenXpx + (float)(simulador.ObjetivoXMax - 0) * escala;
-                using (Pen penObj = new Pen(Color.FromArgb(180, 60, 0), 4f))
-                {
-                    g.DrawLine(penObj, px0, py, px1, py);
-                }
-                using (Font fObj = new Font("Segoe UI", 9F, FontStyle.Bold))
-                using (Brush brObj = new SolidBrush(Color.FromArgb(180, 60, 0)))
-                {
-                    g.DrawString("Objetivo", fObj, brObj, px0, py - 22);
-                }
             }
 
             // Trayectoria (curva)

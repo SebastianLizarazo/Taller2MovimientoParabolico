@@ -7,7 +7,6 @@ namespace Taller2MovimientoParabolico
     /// </summary>
     public enum TipoColision
     {
-        Objetivo,
         Suelo,
         Techo,
         Izquierda,

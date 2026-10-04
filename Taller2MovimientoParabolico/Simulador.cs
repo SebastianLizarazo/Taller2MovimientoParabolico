@@ -5,10 +5,11 @@ namespace Taller2MovimientoParabolico
 {
     /// <summary>
     /// Motor de simulación del movimiento parabólico. Integra con método de Euler,
-    /// detecta colisiones con el objetivo y con el suelo, aplica rebotes con
-    /// pérdida del 40 % de la magnitud de la velocidad e invierte la componente
-    /// vertical. La simulación termina cuando el proyectil toca el suelo por
-    /// segunda vez (después del rebote previo).
+    /// detecta colisiones contra el suelo, el techo y las paredes laterales del
+    /// mundo físico, aplica rebotes con pérdida del 40 % de la magnitud de la
+    /// velocidad e invierte la componente perpendicular. La simulación termina
+    /// cuando el proyectil toca el suelo por segunda vez (después del rebote
+    /// previo) o cuando se alcanza el tope de seguridad de muestras.
     /// </summary>
     public class Simulador
     {
@@ -19,13 +20,6 @@ namespace Taller2MovimientoParabolico
         public double AnguloGrados { get; private set; }
         public double Gravedad { get; private set; }
         public double DT { get; private set; }
-
-        // Objetivo (segmento horizontal)
-        public double ObjetivoY { get; private set; }
-        public double ObjetivoXMin { get; private set; }
-        public double ObjetivoXMax { get; private set; }
-        public bool ObjetivoDefinido { get; private set; }
-        public bool ObjetivoImpactado { get; private set; }
 
         /// <summary>Límite derecho del mundo físico (usado para colisión con la pared Derecha).</summary>
         public double MundoXMax { get; private set; }
@@ -67,88 +61,16 @@ namespace Taller2MovimientoParabolico
         public bool Terminado { get { return terminado; } }
 
         /// <summary>
-        /// Construye e inicializa una simulación. Genera un objetivo horizontal
-        /// aleatorio si rnd != null. Si rnd es null no se genera objetivo.
+        /// Construye e inicializa una simulación.
         /// </summary>
         public Simulador(double x0, double y0, double v0, double anguloGrados,
-                         double gravedad, double dt, Random rnd)
+                         double gravedad, double dt)
         {
             if (dt <= 0) throw new ArgumentException("dt debe ser positivo.");
             X0 = x0; Y0 = y0; V0 = v0;
             AnguloGrados = anguloGrados;
             Gravedad = gravedad;
             DT = dt;
-
-            if (rnd != null)
-            {
-                GenerarObjetivoAleatorio(rnd);
-            }
-            else
-            {
-                ObjetivoDefinido = false;
-            }
-        }
-
-        private void GenerarObjetivoAleatorio(Random rnd)
-        {
-            // Calculamos el alcance y la altura máxima teóricos para colocar el objetivo
-            // en una zona razonable de la trayectoria.
-            double angRad = anguloARadianes();
-            double v0x = V0 * Math.Cos(angRad);
-            double v0y = V0 * Math.Sin(angRad);
-            double tTotal = ModeloTeorico.TiempoTotalVuelo(Y0, v0y, Gravedad);
-            double yMax = ModeloTeorico.AlturaMaxima(Y0, v0y, Gravedad);
-
-            // Altura del objetivo: aleatoria entre una altura mínima razonable y el 65 % de la altura máxima.
-            double yMin = Math.Max(0.5, Math.Min(Y0 * 0.3, 3.0));
-            double yMaxPosible = Math.Max(yMin + 1.0, yMax * 0.65);
-            ObjetivoY = yMin + rnd.NextDouble() * (yMaxPosible - yMin);
-
-            // Ancho del objetivo: entre 2.5 m y 4.5 m (lo bastante ancho para tener buena
-            // probabilidad de intersección con la trayectoria a pesar del error de Euler).
-            double ancho = 2.5 + rnd.NextDouble() * 2.0;
-
-            // Posición horizontal: hallamos los dos puntos donde la trayectoria cruza y=ObjetivoY
-            // y(t) = Y0 + v0y t - 0.5 g t²  ->  t = (v0y ± sqrt(v0y² - 2 g (Y0 - ObjetivoY))) / g
-            double disc = v0y * v0y - 2.0 * Gravedad * (Y0 - ObjetivoY);
-            if (disc < 0 || v0x <= 0)
-            {
-                // La trayectoria no alcanza esta altura (caso raro). Colocamos el objetivo
-                // en una zona neutra: el simulador no lo impactará.
-                double xAlcance = ModeloTeorico.Alcance(X0, v0x, tTotal);
-                double xCentroAux = X0 + (xAlcance - X0) * 0.5 + (rnd.NextDouble() - 0.5) * 2;
-                ObjetivoXMin = xCentroAux;
-                ObjetivoXMax = xCentroAux + ancho;
-                ObjetivoDefinido = true;
-                ObjetivoImpactado = false;
-                return;
-            }
-
-            double t1 = (v0y - Math.Sqrt(disc)) / Gravedad;
-            double t2 = (v0y + Math.Sqrt(disc)) / Gravedad;
-            double xUp = X0 + v0x * t1;   // cruce subiendo
-            double xDown = X0 + v0x * t2; // cruce bajando
-
-            // Usamos el cruce descendente (más estable lejos del origen). El ancho es
-            // generoso para absorber el error numérico del integrador de Euler
-            // (que tiende a cruzar el nivel y un poco más tarde/después que la
-            // solución analítica). El jitter se mantiene pequeño.
-            double jitter = (rnd.NextDouble() - 0.5) * Math.Min(1.0, ancho * 0.2);
-
-            double xIzquierda = xDown - ancho / 2.0 + jitter;
-            double xDerecha = xIzquierda + ancho;
-
-            if (xDerecha <= X0 + 0.1)
-            {
-                ObjetivoDefinido = false;
-                ObjetivoImpactado = false;
-                return;
-            }
-
-            ObjetivoXMin = xIzquierda;
-            ObjetivoXMax = xDerecha;
-            ObjetivoDefinido = true;
-            ObjetivoImpactado = false;
         }
 
         /// <summary>
@@ -176,7 +98,6 @@ namespace Taller2MovimientoParabolico
             vy = v0yT;
 
             rebotesSuelo = 0;
-            ObjetivoImpactado = false;
             terminado = false;
             TerminadoPorTopeMuestras = false;
 
@@ -217,35 +138,6 @@ namespace Taller2MovimientoParabolico
             double xNext = xPrev + vxPrev * DT;
             double yNext = yPrev + vyPrev * DT;
             double vyNext = vyPrev - Gravedad * DT;
-
-            // --- Colisión con objetivo (segmento horizontal) ---
-            // Detección bidireccional: el proyectil puede cruzar y=ObjetivoY subiendo o bajando.
-            if (ObjetivoDefinido && !ObjetivoImpactado &&
-                yPrev != yNext &&
-                (yPrev - ObjetivoY) * (yNext - ObjetivoY) <= 0)
-            {
-                double ratio = (ObjetivoY - yPrev) / (yNext - yPrev);
-                double tCross = tPrev + DT * ratio;
-                double xCross = xPrev + vxPrev * DT * ratio;
-                double vyCross = vyPrev - Gravedad * DT * ratio;
-
-                if (xCross >= ObjetivoXMin && xCross <= ObjetivoXMax)
-                {
-                    RegistrarColisionObjetivo(tCross, xCross, ObjetivoY, vxPrev, vyCross);
-
-                    // Aplicar rebote: invertir vy y reducir magnitud al 60 % (escala 0.6 en ambas componentes).
-                    t = tCross;
-                    x = xCross;
-                    y = ObjetivoY;
-                    vx = 0.6 * vxPrev;
-                    vy = 0.6 * (-vyCross);
-
-                    Muestras.Add(new Muestra(t, x, y, vx, vy));
-                    ObjetivoImpactado = true;
-                    ActualizarMaximos();
-                    return true;
-                }
-            }
 
             // --- Colisión con suelo ---
             if (yNext <= 0 && yPrev > 0)
@@ -484,24 +376,6 @@ namespace Taller2MovimientoParabolico
             }
         }
 
-        private void RegistrarColisionObjetivo(double tCross, double xCross, double yCross,
-                                              double vxAntes, double vyAntes)
-        {
-            var c = new Colision
-            {
-                Tipo = TipoColision.Objetivo,
-                Numero = Colisiones.Count + 1,
-                Tiempo = tCross,
-                X = xCross,
-                Y = yCross,
-                VxAntes = vxAntes,
-                VyAntes = vyAntes,
-                VxDespues = 0.6 * vxAntes,
-                VyDespues = 0.6 * (-vyAntes)
-            };
-            Colisiones.Add(c);
-        }
-
         private void RegistrarColisionSuelo(double tCross, double xCross, double yCross,
                                             double vxAntes, double vyAntes, int numero)
         {
@@ -535,8 +409,8 @@ namespace Taller2MovimientoParabolico
 
         /// <summary>
         /// Registra una colisión contra una pared del mundo (Techo, Izquierda, Derecha).
-        /// A diferencia del Suelo y el Objetivo, el número de impacto es simplemente el
-        /// orden global en la que ocurren (no hay conteo separado por pared).
+        /// A diferencia del Suelo, el número de impacto es simplemente el orden global
+        /// en la que ocurren (no hay conteo separado por pared).
         /// </summary>
         private void RegistrarColisionPared(TipoColision tipo, double tCross, double xCross, double yCross,
                                             double vxAntes, double vyAntes,

@@ -44,14 +44,10 @@
         private System.Windows.Forms.GroupBox gbSimulacion;
         private System.Windows.Forms.Label lblDt;
         private System.Windows.Forms.TextBox txtDt;
-        private System.Windows.Forms.Label lblObjetivoTitulo;
-        private System.Windows.Forms.Label lblObjetivo;
-        private System.Windows.Forms.Label lblObjetivoHit;
         private System.Windows.Forms.Button btnIniciar;
         private System.Windows.Forms.Button btnPausar;
         private System.Windows.Forms.Button btnReiniciar;
         private System.Windows.Forms.Button btnNuevaSim;
-        private System.Windows.Forms.CheckBox chkGenerarObjetivo;
 
         private System.Windows.Forms.GroupBox gbAnimacion;
         private System.Windows.Forms.Panel panelAnimacion;
@@ -123,10 +119,6 @@
             this.gbSimulacion = new System.Windows.Forms.GroupBox();
             this.lblDt = new System.Windows.Forms.Label();
             this.txtDt = new System.Windows.Forms.TextBox();
-            this.chkGenerarObjetivo = new System.Windows.Forms.CheckBox();
-            this.lblObjetivoTitulo = new System.Windows.Forms.Label();
-            this.lblObjetivo = new System.Windows.Forms.Label();
-            this.lblObjetivoHit = new System.Windows.Forms.Label();
             this.btnIniciar = new System.Windows.Forms.Button();
             this.btnPausar = new System.Windows.Forms.Button();
             this.btnReiniciar = new System.Windows.Forms.Button();
@@ -324,10 +316,6 @@
             // 
             this.gbSimulacion.Controls.Add(this.lblDt);
             this.gbSimulacion.Controls.Add(this.txtDt);
-            this.gbSimulacion.Controls.Add(this.chkGenerarObjetivo);
-            this.gbSimulacion.Controls.Add(this.lblObjetivoTitulo);
-            this.gbSimulacion.Controls.Add(this.lblObjetivo);
-            this.gbSimulacion.Controls.Add(this.lblObjetivoHit);
             this.gbSimulacion.Controls.Add(this.btnIniciar);
             this.gbSimulacion.Controls.Add(this.btnPausar);
             this.gbSimulacion.Controls.Add(this.btnReiniciar);
@@ -355,47 +343,6 @@
             this.txtDt.Size = new System.Drawing.Size(137, 27);
             this.txtDt.TabIndex = 1;
             this.txtDt.Text = "0.02";
-            // 
-            // chkGenerarObjetivo
-            // 
-            this.chkGenerarObjetivo.AutoSize = true;
-            this.chkGenerarObjetivo.Checked = true;
-            this.chkGenerarObjetivo.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.chkGenerarObjetivo.Location = new System.Drawing.Point(171, 53);
-            this.chkGenerarObjetivo.Name = "chkGenerarObjetivo";
-            this.chkGenerarObjetivo.Size = new System.Drawing.Size(142, 24);
-            this.chkGenerarObjetivo.TabIndex = 2;
-            this.chkGenerarObjetivo.Text = "Generar objetivo";
-            // 
-            // lblObjetivoTitulo
-            // 
-            this.lblObjetivoTitulo.AutoSize = true;
-            this.lblObjetivoTitulo.Location = new System.Drawing.Point(14, 85);
-            this.lblObjetivoTitulo.Name = "lblObjetivoTitulo";
-            this.lblObjetivoTitulo.Size = new System.Drawing.Size(115, 20);
-            this.lblObjetivoTitulo.TabIndex = 3;
-            this.lblObjetivoTitulo.Text = "Objetivo (y = ?):";
-            // 
-            // lblObjetivo
-            // 
-            this.lblObjetivo.AutoSize = true;
-            this.lblObjetivo.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold);
-            this.lblObjetivo.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(180)))), ((int)(((byte)(60)))), ((int)(((byte)(0)))));
-            this.lblObjetivo.Location = new System.Drawing.Point(126, 85);
-            this.lblObjetivo.Name = "lblObjetivo";
-            this.lblObjetivo.Size = new System.Drawing.Size(109, 20);
-            this.lblObjetivo.TabIndex = 4;
-            this.lblObjetivo.Text = "(no generado)";
-            // 
-            // lblObjetivoHit
-            // 
-            this.lblObjetivoHit.AutoSize = true;
-            this.lblObjetivoHit.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold);
-            this.lblObjetivoHit.ForeColor = System.Drawing.Color.DarkGreen;
-            this.lblObjetivoHit.Location = new System.Drawing.Point(14, 107);
-            this.lblObjetivoHit.Name = "lblObjetivoHit";
-            this.lblObjetivoHit.Size = new System.Drawing.Size(0, 20);
-            this.lblObjetivoHit.TabIndex = 5;
             // 
             // btnIniciar
             // 
