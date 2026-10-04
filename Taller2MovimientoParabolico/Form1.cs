@@ -102,9 +102,11 @@ namespace Taller2MovimientoParabolico
                 mensajeError = "La altura inicial debe estar entre 0 m y 50 m.";
                 return false;
             }
-            if (!TryParse(txtV0.Text, out v0) || v0 <= 0)
+            if (!TryParse(txtV0.Text, out v0) || v0 <= 0 || v0 > V0Max)
             {
-                mensajeError = "La magnitud de la velocidad inicial debe ser mayor a cero.";
+                mensajeError = string.Format(CultureInfo.InvariantCulture,
+                    "La magnitud de la velocidad inicial debe estar entre 0 y {0:0} m/s.",
+                    V0Max);
                 return false;
             }
             if (!TryParse(txtAngulo.Text, out angulo) || angulo < -90 || angulo > 90)
@@ -129,6 +131,13 @@ namespace Taller2MovimientoParabolico
         {
             return double.TryParse(s.Replace(',', '.'), NumberStyles.Float, CultureInfo.InvariantCulture, out v);
         }
+
+        /// <summary>
+        /// Velocidad inicial máxima permitida (m/s). Por encima de este valor la
+        /// simulación se vuelve poco práctica: supera el tope interno de muestras
+        /// y la trayectoria dibujada queda casi invisible.
+        /// </summary>
+        private const double V0Max = 200.0;
 
         // Botones de control de simulación
         private void btnIniciar_Click(object sender, EventArgs e)
