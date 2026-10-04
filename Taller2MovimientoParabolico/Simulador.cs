@@ -136,11 +136,12 @@ namespace Taller2MovimientoParabolico
         }
 
         /// <summary>
-        /// Genera un objetivo horizontal aleatorio para esta corrida, ubicándolo
-        /// en una zona razonable del plano de la trayectoria esperada. Se sitúa
-        /// en X entre el 10 % y el 60 % del alcance teórico (medido desde X0),
-        /// con un ancho entre el 10 % y el 25 % de ese rango, y a una altura
-        /// entre el 20 % y el 70 % de la altura máxima teórica.
+        /// Genera un objetivo horizontal aleatorio para esta corrida. Para
+        /// garantizar que el proyectil SIEMPRE intersecte el objetivo (y se
+        /// pueda observar la cadena de colisiones descrita en el enunciado),
+        /// se elige una X aleatoria dentro del span horizontal de la trayectoria
+        /// y se coloca el objetivo EXACTAMENTE sobre la curva analítica en esa X.
+        /// El ancho del objetivo es 10 % - 25 % del rango horizontal.
         /// </summary>
         private void GenerarObjetivo()
         {
@@ -151,46 +152,50 @@ namespace Taller2MovimientoParabolico
             double alcanceTeor = ModeloTeorico.Alcance(X0, v0xT, tTeor);
             double alturaMaxTeor = ModeloTeorico.AlturaMaxima(Y0, v0yT, Gravedad);
 
-            // Rango horizontal total sobre el que se ubicará el objetivo. Si el alcance
-            // cae antes de X0 (v0x <= 0), usamos un rango positivo mínimo para no
-            // degenerar la selección aleatoria; en ese caso el objetivo quedará donde
-            // pueda y el proyectil simplemente no lo impactará.
+            // Rango horizontal de la trayectoria. Si v0x <= 0 (alcance <= X0) usamos
+            // un valor positivo mínimo para que las cuentas no exploten; en ese caso
+            // el objetivo queda sobre x0 y la colisión sigue siendo detectable.
             double rangeX = alcanceTeor - X0;
-            if (rangeX <= 0) rangeX = Math.Max(Math.Max(alcanceTeor, X0), 1.0);
+            if (rangeX <= 0) rangeX = Math.Max(Math.Abs(alcanceTeor), Math.Abs(X0)) + 1.0;
 
-            double xMinBase = X0 + 0.1 * rangeX;
-            double xMaxBase = X0 + 0.6 * rangeX;
-            // Si la base es degenerada, la llevamos a X0 y damos un ancho mínimo.
+            // 1. Elegir X aleatorio entre el 15 % y el 75 % del rango (evita los
+            //    extremos donde la trayectoria se aplana y haría falta dt muy fino
+            //    para detectar el cruce).
+            double xMinBase = X0 + 0.15 * rangeX;
+            double xMaxBase = X0 + 0.75 * rangeX;
             if (xMaxBase <= xMinBase) xMaxBase = xMinBase + 0.5 * rangeX;
 
-            double minWidth = 0.1 * rangeX;
+            double xCentroObj = xMinBase + rng.NextDouble() * (xMaxBase - xMinBase);
+
+            // 2. Calcular Y en la trayectoria analítica en esa X. Como la trayectoria
+            //    pasa DOS veces por cada X (subiendo y bajando), tomamos el primer
+            //    cruce: t = (x - x0) / v0x. Si v0x ≈ 0 (caso vertical), el objetivo
+            //    va a media altura.
+            double yEnTrayectoria;
+            if (Math.Abs(v0xT) < 1e-6)
+            {
+                yEnTrayectoria = (Y0 + alturaMaxTeor) * 0.5;
+            }
+            else
+            {
+                double t = (xCentroObj - X0) / v0xT;
+                if (t < 0) t = 0;
+                if (t > tTeor) t = tTeor;
+                yEnTrayectoria = Y0 + v0yT * t - 0.5 * Gravedad * t * t;
+            }
+
+            // 3. Ancho del objetivo: 10 % - 25 % del rango horizontal.
+            double minWidth = 0.10 * rangeX;
             double maxWidth = 0.25 * rangeX;
             if (maxWidth < minWidth) maxWidth = minWidth;
-
-            // Dejamos margen suficiente para que el ancho entre sin pisar el borde.
-            double espacioParaAncho = Math.Max(0, xMaxBase - xMinBase - maxWidth);
-            double xMinObj = xMinBase + rng.NextDouble() * espacioParaAncho;
             double width = minWidth + rng.NextDouble() * (maxWidth - minWidth);
-            double xMaxObj = xMinObj + width;
 
-            // Sanity check: garantizar xMinObj < xMaxObj.
-            if (xMaxObj <= xMinObj)
-            {
-                xMaxObj = xMinObj + minWidth;
-            }
-            if (xMaxObj > xMaxBase)
-            {
-                xMaxObj = xMaxBase;
-                xMinObj = Math.Max(xMinBase, xMaxObj - maxWidth);
-                if (xMinObj >= xMaxObj) xMinObj = Math.Max(xMinBase, xMaxObj - minWidth);
-            }
+            double xMinObj = xCentroObj - width / 2.0;
+            double xMaxObj = xCentroObj + width / 2.0;
 
-            // Altura objetivo: entre 20 % y 70 % de la altura máxima teórica.
-            double yMinObj = 0.2 * alturaMaxTeor;
-            double yMaxObj = 0.7 * alturaMaxTeor;
-            if (yMaxObj <= yMinObj) yMaxObj = yMinObj + 0.5 * alturaMaxTeor;
-            double yObj = yMinObj + rng.NextDouble() * (yMaxObj - yMinObj);
-            if (alturaMaxTeor <= 0 || yObj <= 0) yObj = 1.0;
+            // 4. El objetivo va sobre la trayectoria. Y no negativa para evitar
+            //    problemas visuales con el suelo.
+            double yObj = Math.Max(0.05, yEnTrayectoria);
 
             Objetivo = new Objetivo(xMinObj, xMaxObj, yObj, 0.2);
         }
@@ -215,37 +220,44 @@ namespace Taller2MovimientoParabolico
             double vyNext = vyPrev - Gravedad * DT;
 
             // --- Colisión con objetivo (barra horizontal) ---
-            // Se detecta el cruce descendente del plano Y del objetivo, siempre que
-            // la posición horizontal esté dentro del rango [XMin, XMax]. Es el primer
-            // impacto de la cadena; los siguientes impactos siguen siendo contra el suelo.
+            // Se detecta el cruce del plano Y del objetivo (subiendo O bajando) y se
+            // comprueba el x INTERPOLADO en el cruce contra el rango [XMin, XMax] del
+            // objetivo. Antes el chequeo usaba xNext y solo miraba cruces bajando,
+            // lo que dejaba pasar el cruce ascendente (el proyectil atraviesa el
+            // target subiendo) y los casos en los que el xNext quedaba fuera del
+            // rango aunque el xCross estuviera dentro.
             if (!objetivoGolpeado && Objetivo != null
-                && yPrev > Objetivo.Y && yNext <= Objetivo.Y
-                && xNext >= Objetivo.XMin && xNext <= Objetivo.XMax)
+                && (yPrev - Objetivo.Y) * (yNext - Objetivo.Y) <= 0
+                && yPrev != Objetivo.Y)
             {
                 double ratio = (yPrev - Objetivo.Y) / (yPrev - yNext);
-                double tCross = tPrev + DT * ratio;
                 double xCross = xPrev + vxPrev * DT * ratio;
-                double vyCross = vyPrev - Gravedad * DT * ratio;
 
-                // Rebote: la magnitud de la velocidad se reduce al 60 % y la componente
-                // vertical cambia de sentido (equivalente a multiplicar ambas componentes
-                // por 0.6 e invertir vy).
-                double vxNew = 0.6 * vxPrev;
-                double vyNew = -0.6 * vyCross;
+                if (xCross >= Objetivo.XMin && xCross <= Objetivo.XMax)
+                {
+                    double tCross = tPrev + DT * ratio;
+                    double vyCross = vyPrev - Gravedad * DT * ratio;
 
-                RegistrarColisionObjetivo(tCross, xCross, Objetivo.Y,
-                    vxPrev, vyCross, vxNew, vyNew);
+                    // Rebote: la magnitud de la velocidad se reduce al 60 % y la componente
+                    // vertical cambia de sentido (equivalente a multiplicar ambas componentes
+                    // por 0.6 e invertir vy).
+                    double vxNew = 0.6 * vxPrev;
+                    double vyNew = -0.6 * vyCross;
 
-                t = tCross;
-                x = xCross;
-                y = Objetivo.Y;
-                vx = vxNew;
-                vy = vyNew;
-                objetivoGolpeado = true;
+                    RegistrarColisionObjetivo(tCross, xCross, Objetivo.Y,
+                        vxPrev, vyCross, vxNew, vyNew);
 
-                Muestras.Add(new Muestra(t, x, y, vx, vy));
-                ActualizarMaximos();
-                return true;
+                    t = tCross;
+                    x = xCross;
+                    y = Objetivo.Y;
+                    vx = vxNew;
+                    vy = vyNew;
+                    objetivoGolpeado = true;
+
+                    Muestras.Add(new Muestra(t, x, y, vx, vy));
+                    ActualizarMaximos();
+                    return true;
+                }
             }
 
             // --- Colisión con suelo ---
