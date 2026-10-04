@@ -48,6 +48,7 @@
         private System.Windows.Forms.Button btnPausar;
         private System.Windows.Forms.Button btnReiniciar;
         private System.Windows.Forms.Button btnNuevaSim;
+        private System.Windows.Forms.Label lblIntegrantes;
 
         private System.Windows.Forms.GroupBox gbAnimacion;
         private System.Windows.Forms.Panel panelAnimacion;
@@ -123,6 +124,7 @@
             this.btnPausar = new System.Windows.Forms.Button();
             this.btnReiniciar = new System.Windows.Forms.Button();
             this.btnNuevaSim = new System.Windows.Forms.Button();
+            this.lblIntegrantes = new System.Windows.Forms.Label();
             this.gbAnimacion = new System.Windows.Forms.GroupBox();
             this.panelAnimacion = new System.Windows.Forms.Panel();
             this.lblEstadoAnim = new System.Windows.Forms.Label();
@@ -320,9 +322,10 @@
             this.gbSimulacion.Controls.Add(this.btnPausar);
             this.gbSimulacion.Controls.Add(this.btnReiniciar);
             this.gbSimulacion.Controls.Add(this.btnNuevaSim);
+            this.gbSimulacion.Controls.Add(this.lblIntegrantes);
             this.gbSimulacion.Location = new System.Drawing.Point(9, 316);
             this.gbSimulacion.Name = "gbSimulacion";
-            this.gbSimulacion.Size = new System.Drawing.Size(366, 288);
+            this.gbSimulacion.Size = new System.Drawing.Size(366, 340);
             this.gbSimulacion.TabIndex = 1;
             this.gbSimulacion.TabStop = false;
             this.gbSimulacion.Text = "Simulación";
@@ -385,6 +388,17 @@
             this.btnNuevaSim.Text = "Nueva simulación";
             this.btnNuevaSim.UseVisualStyleBackColor = true;
             this.btnNuevaSim.Click += new System.EventHandler(this.btnNuevaSim_Click);
+            //
+            // lblIntegrantes
+            //
+            this.lblIntegrantes.AutoSize = false;
+            this.lblIntegrantes.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Bold);
+            this.lblIntegrantes.ForeColor = System.Drawing.Color.DimGray;
+            this.lblIntegrantes.Location = new System.Drawing.Point(14, 232);
+            this.lblIntegrantes.Name = "lblIntegrantes";
+            this.lblIntegrantes.Size = new System.Drawing.Size(338, 90);
+            this.lblIntegrantes.TabIndex = 10;
+            this.lblIntegrantes.Text = "Integrantes:\r\n- Pedro Pulido\r\n- Sebastian Lizarazo\r\n- Juan Dueñas";
             // 
             // gbAnimacion
             // 
