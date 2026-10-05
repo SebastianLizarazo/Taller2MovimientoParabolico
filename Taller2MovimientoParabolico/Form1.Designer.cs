@@ -44,6 +44,7 @@
         private System.Windows.Forms.GroupBox gbSimulacion;
         private System.Windows.Forms.Label lblDt;
         private System.Windows.Forms.TextBox txtDt;
+        private System.Windows.Forms.CheckBox chkObjetivo;
         private System.Windows.Forms.Button btnIniciar;
         private System.Windows.Forms.Button btnPausar;
         private System.Windows.Forms.Button btnReiniciar;
@@ -120,6 +121,7 @@
             this.gbSimulacion = new System.Windows.Forms.GroupBox();
             this.lblDt = new System.Windows.Forms.Label();
             this.txtDt = new System.Windows.Forms.TextBox();
+            this.chkObjetivo = new System.Windows.Forms.CheckBox();
             this.btnIniciar = new System.Windows.Forms.Button();
             this.btnPausar = new System.Windows.Forms.Button();
             this.btnReiniciar = new System.Windows.Forms.Button();
@@ -318,6 +320,7 @@
             // 
             this.gbSimulacion.Controls.Add(this.lblDt);
             this.gbSimulacion.Controls.Add(this.txtDt);
+            this.gbSimulacion.Controls.Add(this.chkObjetivo);
             this.gbSimulacion.Controls.Add(this.btnIniciar);
             this.gbSimulacion.Controls.Add(this.btnPausar);
             this.gbSimulacion.Controls.Add(this.btnReiniciar);
@@ -341,14 +344,26 @@
             // 
             // txtDt
             // 
-            this.txtDt.Location = new System.Drawing.Point(14, 51);
+this.txtDt.Location = new System.Drawing.Point(14, 51);
             this.txtDt.Name = "txtDt";
             this.txtDt.Size = new System.Drawing.Size(137, 27);
             this.txtDt.TabIndex = 1;
             this.txtDt.Text = "0.02";
-            // 
+            //
+            // chkObjetivo
+            //
+            this.chkObjetivo.AutoSize = true;
+            this.chkObjetivo.Checked = true;
+            this.chkObjetivo.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.chkObjetivo.Location = new System.Drawing.Point(14, 95);
+            this.chkObjetivo.Name = "chkObjetivo";
+            this.chkObjetivo.Size = new System.Drawing.Size(180, 20);
+            this.chkObjetivo.TabIndex = 2;
+            this.chkObjetivo.Text = "Activar objetivo";
+            this.chkObjetivo.UseVisualStyleBackColor = true;
+            //
             // btnIniciar
-            // 
+            //
             this.btnIniciar.Location = new System.Drawing.Point(14, 139);
             this.btnIniciar.Name = "btnIniciar";
             this.btnIniciar.Size = new System.Drawing.Size(160, 37);

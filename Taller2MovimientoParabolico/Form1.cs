@@ -156,6 +156,7 @@ namespace Taller2MovimientoParabolico
             if (simulador == null || !MismosParametros(x0, y0, v0, angulo, gravedad, dt))
             {
                 simulador = new Simulador(x0, y0, v0, angulo, gravedad, dt);
+                simulador.ObjetivoHabilitado = chkObjetivo.Checked;
                 simulador.Iniciar();
                 trayectoriaParaDibujar = new List<PointF>();
                 PrepararAnimacion();
@@ -163,6 +164,7 @@ namespace Taller2MovimientoParabolico
             else
             {
                 // Mismos parámetros: simplemente reiniciar desde el principio.
+                simulador.ObjetivoHabilitado = chkObjetivo.Checked;
                 simulador.Iniciar();
                 trayectoriaParaDibujar = new List<PointF>();
             }

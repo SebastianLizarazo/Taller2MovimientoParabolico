@@ -42,9 +42,18 @@ namespace Taller2MovimientoParabolico
 
         /// <summary>
         /// Objetivo horizontal fijo generado al iniciar la simulación.
-        /// Es null hasta que se llama a <see cref="Iniciar"/>.
+        /// Es null hasta que se llama a <see cref="Iniciar"/>, y queda en null
+        /// si <see cref="ObjetivoHabilitado"/> es false.
         /// </summary>
         public Objetivo Objetivo { get; private set; }
+
+        /// <summary>
+        /// Si es false, <see cref="Iniciar"/> no genera un objetivo y
+        /// <see cref="Objetivo"/> queda en null (la simulación se comporta
+        /// como si no hubiera objetivo: cae, rebota en el suelo 2 veces y termina).
+        /// Default: true.
+        /// </summary>
+        public bool ObjetivoHabilitado { get; set; } = true;
 
         // Generador de números aleatorios para el objetivo.
         private Random rng;
@@ -103,8 +112,15 @@ namespace Taller2MovimientoParabolico
             MundoXMax = Math.Max(xAlcanceTeor, X0) + 5;
             MundoYMax = Math.Max(yMaxTeor, Y0) + 2;
 
-            GenerarObjetivo();
-            objetivoGolpeado = false;
+            if (ObjetivoHabilitado)
+            {
+                GenerarObjetivo();
+                objetivoGolpeado = false;
+            }
+            else
+            {
+                Objetivo = null;
+            }
 
             t = 0;
             x = X0;
